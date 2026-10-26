@@ -14,7 +14,7 @@
 
     - name: Wait for application health endpoint
       ansible.builtin.uri:
-        url: http://localhost:8080/api/health
+        url: http://host.docker.internal:8081/api/health
         method: GET
         status_code: 200
       register: health_result
