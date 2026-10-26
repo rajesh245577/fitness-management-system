@@ -9,7 +9,7 @@
 
     - name: Build and start application and database
       ansible.builtin.command:
-        cmd: docker compose up -d --build --remove-orphans
+        cmd: docker compose -p fitness-management-system up -d --build --remove-orphans
         chdir: "{{ playbook_dir }}/.."
 
     - name: Wait for application health endpoint
