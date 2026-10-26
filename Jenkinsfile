@@ -22,7 +22,7 @@ pipeline {
         stage('Verify API') {
             steps {
                 sh 'curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://host.docker.internal:8081/api/health'
-                sh 'curl --fail http://localhost:8080/api/members'
+                sh 'curl --fail http://host.docker.internal:8081/api/members'
             }
         }
     }
