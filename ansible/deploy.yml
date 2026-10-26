@@ -1,0 +1,27 @@
+---
+- name: Deploy Fitness Management System locally
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Verify Docker daemon is available
+      ansible.builtin.command: docker info
+      changed_when: false
+
+    - name: Build and start application and database
+      ansible.builtin.command:
+        cmd: docker compose up -d --build --remove-orphans
+        chdir: "{{ playbook_dir }}/.."
+
+    - name: Wait for application health endpoint
+      ansible.builtin.uri:
+        url: http://localhost:8080/api/health
+        method: GET
+        status_code: 200
+      register: health_result
+      retries: 20
+      delay: 3
+      until: health_result.status == 200
+
+    - name: Show application health
+      ansible.builtin.debug:
+        var: health_result.json

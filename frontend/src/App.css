@@ -1,0 +1,101 @@
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  font-family: "DM Sans", sans-serif;
+  color: #172d27;
+  background: #f5f7f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-width: 320px; }
+
+button, input { font: inherit; }
+
+.app { max-width: 1240px; margin: auto; padding: 28px 36px; }
+
+.topbar, .brand, .status, .welcome, .stats, .panel-heading,
+.member-name { display: flex; align-items: center; }
+
+.topbar { justify-content: space-between; padding-bottom: 28px; }
+
+.brand { gap: 12px; }
+
+.brand-icon {
+  width: 45px; height: 45px; border-radius: 14px;
+  background: #176b4d; color: white; display: grid;
+  place-items: center; font-size: 25px; font-weight: 800;
+}
+
+.brand h1 { font: 800 22px "Manrope", sans-serif; margin: 0; }
+.brand p { margin: 3px 0 0; color: #75827c; font-size: 12px; }
+
+.status {
+  gap: 8px; border: 1px solid #e1e8e3; background: white;
+  border-radius: 30px; padding: 9px 14px; font-size: 12px;
+}
+.status span { width: 8px; height: 8px; background: #26a269; border-radius: 50%; }
+
+.welcome {
+  justify-content: space-between; padding: 34px 38px;
+  border-radius: 20px; color: white;
+  background: linear-gradient(115deg, #123e30, #207655);
+}
+.eyebrow { font-size: 10px; letter-spacing: 1.4px; font-weight: 700; color: #81948a; margin: 0 0 10px; }
+.welcome .eyebrow { color: #b7dfc8; }
+.welcome h2 { font: 800 clamp(25px, 4vw, 36px) "Manrope", sans-serif; margin: 0; }
+.subtitle { color: #d2e5da; margin-bottom: 0; font-size: 14px; }
+.welcome-icon { font-size: 55px; color: #b8e0c9; }
+
+.stats { gap: 18px; margin: 22px 0; }
+.stat-card, .panel { background: white; border: 1px solid #e8ece8; border-radius: 16px; }
+.stat-card { flex: 1; padding: 23px; min-width: 0; }
+.stat-label { display: block; color: #839087; font-size: 10px; letter-spacing: 1px; font-weight: 700; }
+.stat-card strong { display: block; font: 800 30px "Manrope", sans-serif; margin: 12px 0 5px; }
+.stat-card small { font-size: 13px; }
+.stat-note { color: #8b968f; font-size: 12px; }
+.stat-card .online { color: #218456; font-size: 25px; }
+
+.content { display: grid; grid-template-columns: 0.85fr 1.5fr; gap: 20px; }
+.panel { padding: 24px; min-width: 0; }
+.panel-heading { justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+.panel-heading .eyebrow { margin-bottom: 6px; }
+.panel-heading h3 { margin: 0; font: 700 18px "Manrope", sans-serif; }
+.heading-icon { background: #eaf5ee; color: #176b4d; border-radius: 10px; padding: 8px 12px; font-size: 20px; }
+
+form { display: grid; gap: 17px; }
+label { display: grid; gap: 8px; color: #46564d; font-size: 12px; font-weight: 600; }
+input { width: 100%; border: 1px solid #dfe6e0; border-radius: 9px; padding: 12px; outline: none; color: #172d27; background: #fff; }
+input:focus { border-color: #25815b; box-shadow: 0 0 0 3px #25815b18; }
+input::placeholder { color: #a6afa9; }
+
+.primary-button { display: flex; justify-content: space-between; align-items: center; border: 0; border-radius: 9px; background: #176b4d; color: white; padding: 13px 16px; font-weight: 700; cursor: pointer; }
+.primary-button:hover { background: #10583e; }
+.message { color: #176b4d; font-size: 12px; overflow-wrap: anywhere; }
+
+.refresh-button, .delete-button { background: white; border: 1px solid #dfe6e0; border-radius: 8px; padding: 8px 10px; cursor: pointer; color: #42554a; font-size: 12px; }
+.delete-button { color: #b33e3e; border-color: #f0dada; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th { color: #89958d; font-size: 10px; letter-spacing: .7px; font-weight: 700; padding: 12px 8px; border-bottom: 1px solid #edf0ed; }
+td { padding: 15px 8px; border-bottom: 1px solid #edf0ed; font-size: 12px; white-space: nowrap; }
+.member-name { gap: 10px; }
+.avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: #eaf5ee; color: #176b4d; font-weight: 700; }
+.member-name div { display: grid; gap: 4px; }
+.member-name strong { font-size: 12px; }
+.member-name div span { color: #87938b; font-size: 11px; }
+.empty { padding: 25px 0; color: #87938b; font-size: 13px; text-align: center; }
+
+footer { text-align: center; color: #98a29b; font-size: 11px; padding: 28px 0 5px; }
+
+@media (max-width: 850px) {
+  .app { padding: 20px 15px; }
+  .content { grid-template-columns: 1fr; }
+  .stats { flex-wrap: wrap; }
+  .stat-card { flex: 1 1 150px; }
+  .welcome { padding: 26px 22px; }
+  .welcome-icon { font-size: 35px; }
+}
