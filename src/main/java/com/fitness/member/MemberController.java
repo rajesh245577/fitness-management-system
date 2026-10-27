@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 
@@ -42,10 +41,18 @@ public class MemberController {
     @PutMapping("/{id}")
     public Member update(@PathVariable Long id, @Valid @RequestBody Member input) {
         Member current = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Member not found"));
+
+        if (repository.existsByEmailAndIdNot(input.getEmail(), id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Email already exists");
+        }
+
         current.setName(input.getName());
         current.setEmail(input.getEmail());
         current.setWeightKg(input.getWeightKg());
+
         return repository.save(current);
     }
 
@@ -57,4 +64,6 @@ public class MemberController {
         }
         repository.deleteById(id);
     }
+
+    
 }

@@ -6,6 +6,7 @@ const API = "http://localhost:8081/api/members";
 
 function App() {
   const [members, setMembers] = useState([]);
+  const [editingMember, setEditingMember] = useState(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -30,32 +31,57 @@ function App() {
     loadMembers();
   }, []);
 
-  async function addMember(event) {
-    event.preventDefault();
-    setMessage("");
+  
+async function addMember(event) {
+  event.preventDefault();
+  setMessage("");
 
-    try {
-      const response = await fetch(API, {
-        method: "POST",
+  const isEditing = editingMember !== null;
+
+  try {
+    const response = await fetch(
+      isEditing ? `${API}/${editingMember.id}` : API,
+      {
+        method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           weightKg: Number(form.weightKg),
         }),
-      });
-
-      if (!response.ok) {
-        const body = await response.text();
-        throw new Error(body || "Could not add member");
       }
+    );
 
-      setForm({ name: "", email: "", weightKg: "" });
-      setMessage("Member added successfully.");
-      await loadMembers();
-    } catch (error) {
-      setMessage(error.message || "Failed to add member.");
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(body || "Could not save member");
     }
+
+    setForm({ name: "", email: "", weightKg: "" });
+    setEditingMember(null);
+    setMessage(
+      isEditing
+        ? "Member updated successfully."
+        : "Member added successfully."
+    );
+
+    await loadMembers();
+  } catch (error) {
+    setMessage(error.message || "Failed to save member.");
   }
+}
+
+function editMember(member) {
+  setEditingMember(member);
+
+  setForm({
+    name: member.name,
+    email: member.email,
+    weightKg: String(member.weightKg),
+  });
+
+  setMessage("");
+}
+
 
   async function deleteMember(id) {
     if (!window.confirm("Delete this member?")) return;
@@ -123,7 +149,7 @@ function App() {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">MEMBER DETAILS</p>
-              <h3>Add a member</h3>
+              <h3>{editingMember ? "Edit member" : "Add a member"}</h3>
             </div>
             <span className="heading-icon">＋</span>
           </div>
@@ -162,9 +188,32 @@ function App() {
                 required
               />
             </label>
-            <button className="primary-button" type="submit">
-              Add member <span>→</span>
+          <button className="primary-button" type="submit">
+            {editingMember ? "Save changes" : "Add member"} <span>→</span>
+          </button>
+
+          {editingMember && (
+            <button
+              className="refresh-button"
+              type="button"
+              onClick={() => {
+                setEditingMember(null);
+                setForm({ name: "", email: "", weightKg: "" });
+                setMessage("");
+              }}
+            >
+              Cancel
             </button>
+          )}
+
+          <button
+            className="edit-button"
+            onClick={() => editMember(member)}
+            aria-label={`Edit ${member.name}`}
+          >
+            Edit
+          </button>
+
           </form>
           {message && <p className="message" role="status">{message}</p>}
         </article>
