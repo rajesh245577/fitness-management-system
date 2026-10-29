@@ -7,265 +7,359 @@ const API = "http://localhost:8081/api/members";
 function App() {
   const [members, setMembers] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    weightKg: "",
-  });
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [weightKg, setWeightKg] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-
-  async function loadMembers() {
-    try {
-      const response = await fetch(API);
-      if (!response.ok) throw new Error("Could not load members");
-      setMembers(await response.json());
-    } catch {
-      setMessage("Cannot connect to backend. Check that Docker is running.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [error, setError] = useState("");
 
   useEffect(() => {
     loadMembers();
   }, []);
 
-  
-async function addMember(event) {
-  event.preventDefault();
-  setMessage("");
+  async function loadMembers() {
+    try {
+      setLoading(true);
+      setError("");
 
-  const isEditing = editingMember !== null;
+      const response = await fetch(API);
 
-  try {
-    const response = await fetch(
-      isEditing ? `${API}/${editingMember.id}` : API,
-      {
-        method: isEditing ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          weightKg: Number(form.weightKg),
-        }),
+      if (!response.ok) {
+        throw new Error("Failed to load members.");
       }
-    );
 
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(body || "Could not save member");
+      const data = await response.json();
+      setMembers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(
+        "Unable to connect to the backend. Check whether the Spring Boot application is running."
+      );
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-
-    setForm({ name: "", email: "", weightKg: "" });
-    setEditingMember(null);
-    setMessage(
-      isEditing
-        ? "Member updated successfully."
-        : "Member added successfully."
-    );
-
-    await loadMembers();
-  } catch (error) {
-    setMessage(error.message || "Failed to save member.");
   }
-}
 
-function editMember(member) {
-  setEditingMember(member);
+  function resetForm() {
+    setName("");
+    setEmail("");
+    setWeightKg("");
+    setEditingMember(null);
+  }
 
-  setForm({
-    name: member.name,
-    email: member.email,
-    weightKg: String(member.weightKg),
-  });
+  async function addMember(event) {
+    event.preventDefault();
 
-  setMessage("");
-}
+    setMessage("");
+    setError("");
 
+    const memberData = {
+      name: name.trim(),
+      email: email.trim(),
+      weightKg: Number(weightKg),
+    };
 
-  async function deleteMember(id) {
-    if (!window.confirm("Delete this member?")) return;
+    if (
+      !memberData.name ||
+      !memberData.email ||
+      weightKg === "" ||
+      !Number.isFinite(memberData.weightKg) ||
+      memberData.weightKg <= 0
+    ) {
+      setError("Please enter valid member details.");
+      return;
+    }
 
     try {
-      const response = await fetch(`${API}/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Could not delete member");
-      setMembers((current) => current.filter((member) => member.id !== id));
-      setMessage("Member deleted successfully.");
-    } catch (error) {
-      setMessage(error.message);
+      const isEditing = editingMember !== null;
+
+      const response = await fetch(
+        isEditing ? `${API}/${editingMember.id}` : API,
+        {
+          method: isEditing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(memberData),
+        }
+      );
+
+      if (!response.ok) {
+        const details = await response.text();
+        throw new Error(details || "Unable to save member.");
+      }
+
+      setMessage(
+        isEditing
+          ? "Member updated successfully."
+          : "Member added successfully."
+      );
+
+      resetForm();
+      await loadMembers();
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+      console.error(err);
     }
   }
 
+  function editMember(member) {
+    setEditingMember(member);
+    setName(member.name ?? "");
+    setEmail(member.email ?? "");
+    setWeightKg(String(member.weightKg ?? ""));
+    setMessage("");
+    setError("");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function cancelEdit() {
+    resetForm();
+    setMessage("");
+    setError("");
+  }
+
+  async function deleteMember(id) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this member?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`${API}/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const details = await response.text();
+        throw new Error(details || "Unable to delete member.");
+      }
+
+      setMembers((previousMembers) =>
+        previousMembers.filter((member) => member.id !== id)
+      );
+
+      if (editingMember?.id === id) {
+        resetForm();
+      }
+
+      setMessage("Member deleted successfully.");
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+      console.error(err);
+    }
+  }
+
+  const averageWeight =
+    members.length > 0
+      ? (
+          members.reduce(
+            (total, member) =>
+              total + (Number(member.weightKg) || 0),
+            0
+          ) / members.length
+        ).toFixed(1)
+      : "0.0";
+
   return (
-    <main className="app">
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-icon">F</div>
+    <div className="app">
+      <header className="app-header">
+        <div className="header-content">
           <div>
-            <h1>FitTrack</h1>
-            <p>Fitness Management System</p>
+            <p className="eyebrow">FITNESS MANAGEMENT SYSTEM</p>
+            <h1>Fitness Dashboard</h1>
+            <p className="header-description">
+              Manage your fitness members in one place.
+            </p>
+          </div>
+
+          <div className="status-badge">
+            <span className="status-dot"></span>
+            System Dashboard
           </div>
         </div>
-        <span className="status"><span /> System dashboard</span>
       </header>
 
-      <section className="welcome">
-        <div>
-          <p className="eyebrow">YOUR FITNESS WORKSPACE</p>
-          <h2>Manage your members.</h2>
-          <p className="subtitle">
-            Keep member details organized in one place.
-          </p>
-        </div>
-        <div className="welcome-icon">✦</div>
-      </section>
-
-      <section className="stats">
-        <article className="stat-card">
-          <span className="stat-label">TOTAL MEMBERS</span>
-          <strong>{members.length}</strong>
-          <span className="stat-note">Registered members</span>
-        </article>
-        <article className="stat-card">
-          <span className="stat-label">AVERAGE WEIGHT</span>
-          <strong>
-            {members.length
-              ? (members.reduce((sum, m) => sum + Number(m.weightKg || 0), 0) /
-                  members.length).toFixed(1)
-              : "0.0"}{" "}
-            <small>kg</small>
-          </strong>
-          <span className="stat-note">Across recorded members</span>
-        </article>
-        <article className="stat-card">
-          <span className="stat-label">SYSTEM STATUS</span>
-          <strong className="online">Online</strong>
-          <span className="stat-note">Dashboard available</span>
-        </article>
-      </section>
-
-      <section className="content">
-        <article className="panel form-panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">MEMBER DETAILS</p>
-              <h3>{editingMember ? "Edit member" : "Add a member"}</h3>
-            </div>
-            <span className="heading-icon">＋</span>
+      <main className="main-content">
+        <section className="stats-grid">
+          <div className="stat-card">
+            <p className="stat-label">Total Members</p>
+            <h2>{members.length}</h2>
+            <p className="stat-description">Registered members</p>
           </div>
 
-          <form onSubmit={addMember}>
-            <label>
-              Full name
+          <div className="stat-card">
+            <p className="stat-label">Average Weight</p>
+            <h2>{averageWeight} kg</h2>
+            <p className="stat-description">Across all members</p>
+          </div>
+
+          <div className="stat-card">
+            <p className="stat-label">Application</p>
+            <h2 className="system-status">Active</h2>
+            <p className="stat-description">Fitness management</p>
+          </div>
+        </section>
+
+        <section className="content-card">
+          <div className="section-heading">
+            <div>
+              <h2>
+                {editingMember ? "Edit Member" : "Add a Member"}
+              </h2>
+              <p>
+                {editingMember
+                  ? "Update the member's information."
+                  : "Enter the details to register a new member."}
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={addMember} className="member-form">
+            <div className="form-group">
+              <label htmlFor="name">Full Name</label>
               <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Enter member name"
+                id="name"
+                type="text"
+                placeholder="Enter full name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
                 required
               />
-            </label>
-            <label>
-              Email address
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
               <input
+                id="email"
                 type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="member@example.com"
+                placeholder="Enter email address"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 required
               />
-            </label>
-            <label>
-              Weight (kg)
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="weightKg">Weight (kg)</label>
               <input
+                id="weightKg"
                 type="number"
+                placeholder="Enter weight"
                 min="0.1"
                 step="0.1"
-                value={form.weightKg}
-                onChange={(e) =>
-                  setForm({ ...form, weightKg: e.target.value })
-                }
-                placeholder="e.g. 65.5"
+                value={weightKg}
+                onChange={(event) => setWeightKg(event.target.value)}
                 required
               />
-            </label>
-          <button className="primary-button" type="submit">
-            {editingMember ? "Save changes" : "Add member"} <span>→</span>
-          </button>
+            </div>
 
-          {editingMember && (
-            <button
-              className="refresh-button"
-              type="button"
-              onClick={() => {
-                setEditingMember(null);
-                setForm({ name: "", email: "", weightKg: "" });
-                setMessage("");
-              }}
-            >
-              Cancel
-            </button>
+            <div className="form-actions">
+              <button type="submit" className="primary-button">
+                {editingMember ? "Update Member" : "Add Member"}
+              </button>
+
+              {editingMember && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+
+          {message && (
+            <p className="success-message" role="status">
+              {message}
+            </p>
           )}
 
-          <button
-            className="edit-button"
-            onClick={() => editMember(member)}
-            aria-label={`Edit ${member.name}`}
-          >
-            Edit
-          </button>
+          {error && (
+            <p className="error-message" role="alert">
+              {error}
+            </p>
+          )}
+        </section>
 
-          </form>
-          {message && <p className="message" role="status">{message}</p>}
-        </article>
-
-        <article className="panel members-panel">
-          <div className="panel-heading">
+        <section className="content-card">
+          <div className="section-heading members-heading">
             <div>
-              <p className="eyebrow">YOUR DATABASE</p>
-              <h3>Registered members</h3>
+              <h2>Registered Members</h2>
+              <p>View, edit, and delete member information.</p>
             </div>
-            <button className="refresh-button" onClick={loadMembers}>
-              Refresh ↻
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={loadMembers}
+            >
+              Refresh
             </button>
           </div>
 
           {loading ? (
-            <p className="empty">Loading members...</p>
+            <p className="empty-state">Loading members...</p>
           ) : members.length === 0 ? (
-            <p className="empty">No members yet. Add your first member.</p>
+            <p className="empty-state">
+              No members registered yet. Add your first member above.
+            </p>
           ) : (
-            <div className="table-wrap">
-              <table>
+            <div className="table-container">
+              <table className="members-table">
                 <thead>
                   <tr>
-                    <th>MEMBER</th>
-                    <th>WEIGHT</th>
-                    <th>ACTION</th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Weight</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {members.map((member) => (
                     <tr key={member.id}>
-                      <td>
-                        <div className="member-name">
-                          <span className="avatar">
-                            {member.name?.charAt(0).toUpperCase()}
-                          </span>
-                          <div>
-                            <strong>{member.name}</strong>
-                            <span>{member.email}</span>
-                          </div>
-                        </div>
-                      </td>
+                      <td>{member.id}</td>
+                      <td>{member.name}</td>
+                      <td>{member.email}</td>
                       <td>{member.weightKg} kg</td>
+
                       <td>
-                        <button
-                          className="delete-button"
-                          onClick={() => deleteMember(member.id)}
-                          aria-label={`Delete ${member.name}`}
-                        >
-                          Delete
-                        </button>
+                        <div className="table-actions">
+                          <button
+                            type="button"
+                            className="edit-button"
+                            onClick={() => editMember(member)}
+                            aria-label={`Edit ${member.name}`}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            className="delete-button"
+                            onClick={() => deleteMember(member.id)}
+                            aria-label={`Delete ${member.name}`}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -273,14 +367,14 @@ function editMember(member) {
               </table>
             </div>
           )}
-        </article>
-      </section>
+        </section>
 
-      <footer>FitTrack · Fitness Management System · DevOps Project</footer>
-    </main>
+        <footer className="app-footer">
+          Fitness Management System
+        </footer>
+      </main>
+    </div>
   );
 }
 
 export default App;
-
-//test3
